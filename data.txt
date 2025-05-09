@@ -1,0 +1,3 @@
+B22, Asma, 122, 08123, Wilangan, Gendingan, 45000.0
+A2, Ama, 12, 12, Wilangan, Ngawi, 35000.0
+A1, Sulthan, 2455250, 081234567, Wilangan, Magelang, 80000.0
