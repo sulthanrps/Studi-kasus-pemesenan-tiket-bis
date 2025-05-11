@@ -1,7 +1,6 @@
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.*;
 import java.util.*;
 
@@ -27,9 +26,24 @@ public class SeatBookingGUI extends JFrame {
         seatPanel.add(createSeatLayout(seatButtonsB, 11, 2, "B"));
         add(seatPanel, BorderLayout.NORTH);
 
-        setSize(600, 500);
+        JButton hapusButton = new JButton("Reset");
+        add(hapusButton, BorderLayout.SOUTH);
+        hapusButton.setSize(200, 20);
+        hapusButton.addActionListener(e -> {
+            openConfirmationDialog();
+        });
+
+        setSize(600, 450);
         setLocationRelativeTo(null);
         setVisible(true);
+    }
+
+    private void hapusData(){
+        try (FileWriter writer = new FileWriter("data.txt")) {
+            writer.write("");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private JPanel createSeatLayout(JButton[][] buttons, int rows, int cols, String prefix) {
@@ -37,10 +51,7 @@ public class SeatBookingGUI extends JFrame {
         int counter = 1;
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-//                if (prefix.equals("B") && i == 5 && j > 1) continue; // B21-B22 only
-
                 String seatID = prefix + counter++;
-                System.out.println(seatID);
                 JButton seatBtn = new JButton(seatID);
 
                 seatBtn.setBackground(Color.GREEN);
@@ -64,6 +75,46 @@ public class SeatBookingGUI extends JFrame {
         }
         panel.setBorder(BorderFactory.createTitledBorder("Kursi " + prefix));
         return panel;
+    }
+
+    private void openConfirmationDialog(){
+        JDialog confirmationDialog = new JDialog(this, "Confirmation Pop Up", true);
+        confirmationDialog.setLayout(new GridLayout(2, 2, 5, 5));
+        confirmationDialog.setSize(300, 50);
+        confirmationDialog.setLocationRelativeTo(this);
+
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        contentPanel.setBorder(new EmptyBorder(10, 10, 0, 10));
+
+        JLabel confirmationLabel = new JLabel("Apakah anda ingin menghapus data tiket ?", SwingConstants.CENTER);
+
+        JButton yesBtn = new JButton("Ya, saya yakin");
+
+        contentPanel.add(confirmationLabel);
+        confirmationLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        contentPanel.add(yesBtn);
+        yesBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        confirmationDialog.getContentPane().add(contentPanel);
+        confirmationDialog.pack();
+
+        yesBtn.setBackground(Color.RED);
+        yesBtn.setOpaque(true);
+        yesBtn.setBorderPainted(false);
+        yesBtn.setContentAreaFilled(true);
+        yesBtn.setFocusPainted(false);
+        yesBtn.setForeground(Color.WHITE);
+
+
+        yesBtn.addActionListener(e -> {
+            hapusData();
+            turnGreen();
+            confirmationDialog.dispose();
+        });
+
+        confirmationDialog.setVisible(true);
     }
 
     private void openPassengerDialog() {
@@ -105,7 +156,11 @@ public class SeatBookingGUI extends JFrame {
                 return;
             }
 
+            Penumpang penumpang = new Penumpang(nama, nik, hp);
+
             Trayek trayek = new Trayek(naik, turun);
+
+            Tiket tiket = new Tiket(penumpang, trayek);
 
             double harga = trayek.hargaTiket();
             JOptionPane.showMessageDialog(dialog, "Pemesanan berhasil!\nHarga Tiket: Rp" + harga);
@@ -113,7 +168,6 @@ public class SeatBookingGUI extends JFrame {
 
             try (FileWriter writer = new FileWriter("data.txt", true)) {
                 writer.write(selectedSeat + ", " + nama + ", " + nik + ", " + hp + ", " + naik + ", " + turun + ", " + harga + "\n");
-
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(dialog, "Gagal menyimpan data!", "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -123,6 +177,8 @@ public class SeatBookingGUI extends JFrame {
             hpField.setText("");
             naikCombo.setSelectedIndex(0);
             turunCombo.setSelectedIndex(0);
+
+            loadPassengers();
 
             dialog.dispose();
         });
@@ -143,6 +199,45 @@ public class SeatBookingGUI extends JFrame {
             }
         } catch (IOException e) {
             System.err.println("Gagal membaca file data.txt");
+        }
+    }
+
+    private void loadPassengers() {
+        loadBookedSeats();
+        for(String seat : selectedSeats){
+            for(int i = 0; i < seatButtonsA.length; i++){
+                for(int j = 0; j < seatButtonsA[i].length; j++){
+                    if(seatButtonsA[i][j].getText().equals(seat)){
+                        seatButtonsA[i][j].setBackground(Color.RED);
+                        seatButtonsA[i][j].setEnabled(false);
+                    }
+                }
+            }
+
+            for(int i = 0; i < seatButtonsB.length; i++){
+                for(int j = 0; j < seatButtonsB[i].length; j++){
+                    if(seatButtonsB[i][j].getText().equals(seat)){
+                        seatButtonsB[i][j].setBackground(Color.RED);
+                        seatButtonsB[i][j].setEnabled(false);
+                    }
+                }
+            }
+        }
+    }
+
+    private void turnGreen(){
+        for(int i = 0; i < seatButtonsA.length; i++){
+            for(int j = 0; j < seatButtonsA[i].length; j++){
+                seatButtonsA[i][j].setBackground(Color.GREEN);
+                seatButtonsA[i][j].setEnabled(true);
+            }
+        }
+
+        for(int i = 0; i < seatButtonsB.length; i++){
+            for(int j = 0; j < seatButtonsB[i].length; j++){
+                seatButtonsB[i][j].setBackground(Color.GREEN);
+                seatButtonsB[i][j].setEnabled(true);
+            }
         }
     }
 
