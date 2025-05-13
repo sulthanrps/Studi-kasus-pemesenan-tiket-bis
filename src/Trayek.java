@@ -1,3 +1,5 @@
+
+
 public class Trayek {
     private String naik;
     private String turun;
