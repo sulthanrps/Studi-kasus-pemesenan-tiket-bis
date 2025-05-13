@@ -12,8 +12,20 @@ public class SeatBookingGUI extends JFrame {
 
     private final String[] rute = Trayek.rute;
 
+    private String kasir; // Nama kasir yang login
+
     public SeatBookingGUI() {
-        setTitle("Pemesanan Kursi Eka Bus");
+        this.kasir = "Kasir";
+        initGUI();
+    }
+
+    public SeatBookingGUI(String kasirName) {
+        this.kasir = kasirName;
+        initGUI();
+    }
+
+    private void initGUI() {
+        setTitle("Pemesanan Kursi Eka Bus - Kasir: " + kasir);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
@@ -26,16 +38,107 @@ public class SeatBookingGUI extends JFrame {
         seatPanel.add(createSeatLayout(seatButtonsB, 11, 2, "B"));
         add(seatPanel, BorderLayout.NORTH);
 
-        JButton hapusButton = new JButton("Reset");
-        add(hapusButton, BorderLayout.SOUTH);
-        hapusButton.setSize(200, 20);
-        hapusButton.addActionListener(e -> {
-            openConfirmationDialog();
-        });
+        JButton logoutButton = new JButton("Logout");
+        add(logoutButton, BorderLayout.SOUTH);
+        logoutButton.setPreferredSize(new Dimension(200, 20));
+        logoutButton.addActionListener(e -> doLogout());
 
         setSize(600, 450);
         setLocationRelativeTo(null);
         setVisible(true);
+    }
+
+    private void doLogout() {
+        File file = new File("data.txt");
+
+        // Ini array untuk tampilan di gui kotak kotaknya berapa
+        int rowCount = 0;
+        if (file.exists()) {
+            try (Scanner sc = new Scanner(file)) {
+                while (sc.hasNextLine()) {
+                    String line = sc.nextLine().trim();
+                    if (line.isEmpty()) continue;
+                    String[] parts = line.split(",");
+                    if (parts.length >= 7) {
+                        rowCount++;
+                    }
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        // Preapare array sesuai jumlahnya
+        Object[][] data = new Object[rowCount][7];
+        int count = 0;
+        double total = 0;
+
+        if (file.exists()) {
+            try (Scanner sc2 = new Scanner(file)) {
+                int idx = 0;
+                while (sc2.hasNextLine()) {
+                    String line = sc2.nextLine().trim();
+                    if (line.isEmpty()) continue;
+                    String[] parts = line.split(",");
+                    if (parts.length >= 7) {
+                        String kursi  = parts[0].trim();
+                        String nama   = parts[1].trim();
+                        String nik    = parts[2].trim();
+                        String hp     = parts[3].trim();
+                        String asal   = parts[4].trim();
+                        String tujuan = parts[5].trim();
+                        double harga  = Double.parseDouble(parts[6].trim());
+
+                        data[idx][0] = kursi;
+                        data[idx][1] = nama;
+                        data[idx][2] = nik;
+                        data[idx][3] = hp;
+                        data[idx][4] = asal;
+                        data[idx][5] = tujuan;
+                        data[idx][6] = harga;
+
+                        total += harga;
+                        count++;
+                        idx++;
+                    }
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        // header
+        String headerText = String.format(
+                "<html><b>Nama Kasir:</b> %s&nbsp;&nbsp; " +
+                        "<b>Tiket Terjual:</b> %d&nbsp;&nbsp; " +
+                        "<b>Total Penjualan:</b> Rp%.0f</html>",
+                kasir, count, total
+        );
+        JLabel lblHeader = new JLabel(headerText);
+
+        String[] columnNames = {"Kursi", "Nama", "NIK", "HP", "Asal", "Tujuan", "Harga"};
+        JTable table = new JTable(data, columnNames); {
+            table.setAutoCreateRowSorter(true);
+            table.setFillsViewportHeight(true);
+        }
+
+        JScrollPane scroll = new JScrollPane(table);
+        scroll.setPreferredSize(new Dimension(550, 250));
+
+        // Panel untuk header sama tabel
+        JPanel panel = new JPanel(new BorderLayout(5,5));
+        panel.add(lblHeader, BorderLayout.NORTH);
+        panel.add(scroll, BorderLayout.CENTER);
+
+        JOptionPane.showMessageDialog(
+                this,
+                panel,
+                "Ringkasan Harian",
+                JOptionPane.INFORMATION_MESSAGE
+        );
+
+        hapusData();
+        System.exit(0);
     }
 
     private void hapusData(){
@@ -163,8 +266,18 @@ public class SeatBookingGUI extends JFrame {
             Tiket tiket = new Tiket(penumpang, trayek);
 
             double harga = trayek.hargaTiket();
-            JOptionPane.showMessageDialog(dialog, "Pemesanan berhasil!\nHarga Tiket: Rp" + harga);
 
+            String message = "<html><body style='font-family:Segoe UI, sans-serif; padding:10px;'>"
+                    + "<div style='text-align:center;'>"
+                    + "<div style='font-size:50px; color:#27ae60;'>✔</div>"
+                    + "<div style='font-size:22px; font-weight:bold; color:#27ae60; margin-top:10px;'>Pemesanan Berhasil!</div>"
+                    + "<div style='font-size:14px; color:#555; margin-top:5px;'>Tiket telah berhasil dipesan.</div>"
+                    + "<hr style='margin:15px 0; border: none; border-top: 1px solid #ddd;'>"
+                    + "<div style='font-size:16px; color:#2c3e50;'>Harga Tiket:</div>"
+                    + "<div style='font-size:24px; font-weight:bold; color:#2980b9;'>Rp" + harga + "</div>"
+                    + "</div></body></html>";
+
+            JOptionPane.showMessageDialog(null, message, "Massage", JOptionPane.PLAIN_MESSAGE);
 
             try (FileWriter writer = new FileWriter("data.txt", true)) {
                 writer.write(selectedSeat + ", " + nama + ", " + nik + ", " + hp + ", " + naik + ", " + turun + ", " + harga + "\n");
