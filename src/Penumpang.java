@@ -1,3 +1,5 @@
+
+
 public class Penumpang {
     private String nama;
     private String nik;
