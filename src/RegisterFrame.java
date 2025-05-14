@@ -61,6 +61,10 @@ public class RegisterFrame extends JFrame implements ActionListener {
         btnDaftar.setFocusPainted(false);
         btnDaftar.addActionListener(this);
 
+        btnDaftar.setOpaque(true);
+        btnDaftar.setBorderPainted(false);
+        btnDaftar.setContentAreaFilled(true);
+
         JPanel btnPanel = new JPanel();
         btnPanel.setBackground(Color.WHITE);
         btnPanel.add(btnDaftar);

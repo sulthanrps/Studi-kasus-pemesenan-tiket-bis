@@ -17,7 +17,7 @@ public class OnBoardingFrame extends JFrame {
         // Ini untuk ucapan berdasarkan waktu
         String ucapan;
         int hour = LocalTime.now().getHour();
-        if (hour >= 4 && hour < 12) ucapan = "Selamat Pagi";
+        if (hour >= 4 && hour < 12)   ucapan = "Selamat Pagi";
         else if (hour < 15)           ucapan = "Selamat Siang";
         else if (hour < 18)           ucapan = "Selamat Sore";
         else                          ucapan = "Selamat Malam";
@@ -57,6 +57,9 @@ public class OnBoardingFrame extends JFrame {
             new RegisterFrame().setVisible(true);
             dispose();
         });
+        btnDaftar.setOpaque(true);
+        btnDaftar.setBorderPainted(false);
+        btnDaftar.setContentAreaFilled(true);
 
         JButton btnLogin = new JButton("Login");
         btnLogin.setFont(new Font("SansSerif", Font.BOLD, 14));
@@ -68,6 +71,9 @@ public class OnBoardingFrame extends JFrame {
             new LoginFrame().setVisible(true);
             dispose();
         });
+        btnLogin.setOpaque(true);
+        btnLogin.setBorderPainted(false);
+        btnLogin.setContentAreaFilled(true);
 
         JPanel southPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
         southPanel.setBorder(new EmptyBorder(15, 0, 20, 0));
