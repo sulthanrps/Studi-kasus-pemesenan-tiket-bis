@@ -580,7 +580,6 @@ public class SeatBookingGUI extends JFrame {
 
             // jika user pilih Cetak Tiket, panggil method cetak
             if (choice == JOptionPane.YES_OPTION) {
-                System.out.println("YESfdkshkasjhksd");
               PrintTicketFrame sda =  new PrintTicketFrame(penumpang, trayek, harga);
               sda.setVisible(true);
 

@@ -53,6 +53,9 @@ public class LoginFrame extends JFrame {
         loginButton.setBackground(new Color(46, 134, 193));
         loginButton.setForeground(Color.WHITE);
         loginButton.setFocusPainted(false);
+        loginButton.setOpaque(true);
+        loginButton.setBorderPainted(false);
+        loginButton.setContentAreaFilled(true);
 
         loginButton.addActionListener(e -> {
             String user = usernameField.getText().trim();

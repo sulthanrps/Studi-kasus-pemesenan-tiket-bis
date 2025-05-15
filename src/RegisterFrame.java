@@ -61,12 +61,18 @@ public class RegisterFrame extends JFrame implements ActionListener {
         btnDaftar.setForeground(Color.WHITE);
         btnDaftar.setFocusPainted(false);
         btnDaftar.addActionListener(this);
+        btnDaftar.setOpaque(true);
+        btnDaftar.setBorderPainted(false);
+        btnDaftar.setContentAreaFilled(true);
 
         btnKembali = new JButton("Kembali");
         btnKembali.setFont(new Font("SansSerif", Font.BOLD, 14));
         btnKembali.setBackground(Color.LIGHT_GRAY);
         btnKembali.setFocusPainted(false);
         btnKembali.addActionListener(this);
+        btnKembali.setOpaque(true);
+        btnKembali.setBorderPainted(false);
+        btnKembali.setContentAreaFilled(true);
 
         JPanel btnPanel = new JPanel();
         btnPanel.setBackground(Color.WHITE);
