@@ -10,6 +10,7 @@ public class RegisterFrame extends JFrame implements ActionListener {
     private final JPasswordField txtPassword;
     private final JButton btnKembali;
 
+
     public RegisterFrame() {
         // Ini buat set window
         setTitle("Registrasi Kasir Bus Eka");
