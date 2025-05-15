@@ -1,19 +1,28 @@
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.util.*;
+import java.util.List;
 
 public class SeatBookingGUI extends JFrame {
     private final JButton[][] seatButtonsA = new JButton[9][2];
     private final JButton[][] seatButtonsB = new JButton[11][2];
-    private final Set<String> selectedSeats = new HashSet<>();
+    private Set<String> selectedSeats = new HashSet<>();
     private String selectedSeat = "";
 
     private final String[] rute = Trayek.rute;
 
     private final String kasir; // Nama kasir yang login
+
+    private List<String[]> dataPelanggan = new ArrayList<>();
+
+    private DefaultTableModel model;
+    private JTable table;
 
     public SeatBookingGUI() {
         this.kasir = "Kasir";
@@ -39,14 +48,281 @@ public class SeatBookingGUI extends JFrame {
         seatPanel.add(createSeatLayout(seatButtonsB, 11, 2, "B"));
         add(seatPanel, BorderLayout.NORTH);
 
+        JPanel bottom = new JPanel();
+        JButton viewDataBtn = new JButton("Lihat Data Pelanggan");
+        viewDataBtn.addActionListener(e -> openDataPelanggan());
         JButton logoutButton = new JButton("Logout");
-        add(logoutButton, BorderLayout.SOUTH);
-        logoutButton.setPreferredSize(new Dimension(200, 20));
         logoutButton.addActionListener(e -> doLogout());
+        bottom.add(viewDataBtn);
+        bottom.add(logoutButton);
+        add(bottom, BorderLayout.SOUTH);
 
-        setSize(600, 450);
+
+        setSize(600, 500);
         setLocationRelativeTo(null);
         setVisible(true);
+    }
+
+    private void openDataPelanggan(){
+        getDataPelanggan();
+
+        String[] columnNames = {"Kursi", "Nama", "NIK", "HP", "Asal", "Tujuan", "Harga", "Aksi"};
+
+        model = new DefaultTableModel(columnNames, 0){
+          public boolean isCellEditable(int row, int column) {
+              return column == 7;
+          }
+        };
+
+        for(String[] row : dataPelanggan) {
+            model.addRow(new Object[]{row[0], row[1], row[2], row[3], row[4], row[5], row[6], "Aksi"});
+        }
+
+        table = new JTable(model);
+        table.setRowHeight(40);
+        table.getColumn("Aksi").setMinWidth(200);
+        table.getColumn("Aksi").setMaxWidth(300);
+        table.getColumn("Aksi").setCellRenderer(new ButtonCellRenderer());
+        table.getColumn("Aksi").setCellEditor(new ButtonCellEditor());
+
+        refreshTable();
+
+        JFrame frame = new JFrame("Data Pelanggan");
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        frame.setSize(700, 300);
+        frame.add(new JScrollPane(table));
+        frame.setVisible(true);
+
+        updateSeatLayout();
+    };
+
+    private void refreshTable() {
+        model.setRowCount(0); // Hapus semua baris
+        for (String[] row : dataPelanggan) {
+            model.addRow(new Object[]{row[0], row[1], row[2], row[3], row[4], row[5], row[6], "Aksi"});
+        }
+    }
+
+    public class ButtonCellRenderer extends JPanel implements TableCellRenderer {
+        private final JButton btnEdit = new JButton("Edit");
+        private final JButton btnDelete = new JButton("Delete");
+        public ButtonCellRenderer() {
+            setLayout(new FlowLayout(FlowLayout.CENTER));
+            btnEdit.setBackground(Color.YELLOW);
+            btnEdit.setMargin(new Insets(2, 8, 2, 8));
+            btnEdit.setOpaque(true);
+            btnEdit.setBorderPainted(false);
+            btnEdit.setContentAreaFilled(true);
+            btnEdit.setFocusable(true);
+
+            btnDelete.setBackground(Color.RED);
+            btnDelete.setOpaque(true);
+            btnDelete.setBorderPainted(false);
+            btnDelete.setContentAreaFilled(true);
+            btnDelete.setFocusable(true);
+            btnDelete.setMargin(new Insets(2, 8, 2, 8));
+
+            add(btnEdit);
+            add(btnDelete);
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            return this;
+        }
+    }
+
+    public class ButtonCellEditor extends AbstractCellEditor implements TableCellEditor {
+        private final JPanel panel = new JPanel();
+        private final JButton btnEdit = new JButton("Edit");
+        private final JButton btnDelete = new JButton("Delete");
+
+        private int selectedRow;
+
+        public ButtonCellEditor() {
+            panel.setLayout(new GridLayout(1, 2, 0, 0));
+            btnEdit.setBackground(Color.YELLOW);
+            btnEdit.setMargin(new Insets(2, 8, 2, 8));
+            btnEdit.setOpaque(true);
+            btnEdit.setBorderPainted(false);
+            btnEdit.setContentAreaFilled(true);
+            btnEdit.setFocusable(true);
+
+            btnDelete.setBackground(Color.RED);
+            btnDelete.setOpaque(true);
+            btnDelete.setBorderPainted(false);
+            btnDelete.setContentAreaFilled(true);
+            btnDelete.setFocusable(true);
+            btnDelete.setMargin(new Insets(2, 8, 2, 8));
+
+            panel.add(btnEdit);
+            panel.add(btnDelete);
+
+            btnEdit.addActionListener(e -> {
+                fireEditingStopped();
+                String[] getPenumpang = getDataPenumpang();
+                editData(selectedRow);
+                System.out.println(getPenumpang[0]);
+            });
+
+            btnDelete.addActionListener(e -> {
+                fireEditingStopped();
+                String[] getPenumpang = getDataPenumpang();
+                System.out.println("Hapus data kursi " + getPenumpang[0]);
+                deleteData(selectedRow);
+            });
+        }
+
+        public String[] getDataPenumpang(){
+            for (int i = 0; i < dataPelanggan.size(); i++) {
+                if(i == selectedRow){
+                    return dataPelanggan.get(i);
+                }
+            }
+
+            return null;
+        }
+
+        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+            selectedRow = row;
+            return panel;
+        }
+
+        public Object getCellEditorValue() {
+            return this;
+        }
+    }
+
+    private void deleteData(int id) {
+        // Tampilkan dialog konfirmasi
+        int choice = JOptionPane.showConfirmDialog(
+                this,
+                "Apakah Anda yakin ingin menghapus data ini?",
+                "Konfirmasi Hapus Data",
+                JOptionPane.YES_NO_OPTION
+        );
+
+        // Hanya lanjutkan jika pengguna memilih "Yes"
+        if (choice == JOptionPane.YES_OPTION) {
+            dataPelanggan.remove(id);
+
+            try (FileWriter writer = new FileWriter("data.txt", false)) {
+                for (String[] row : dataPelanggan) {
+                    writer.write(String.join(", ", row) + "\n");
+                }
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, "Gagal menghapus data!", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            refreshTable();
+            updateSeatLayout(); // Sinkronkan layout kursi
+        }
+    }
+
+    private void editData(int rowIndex) {
+        String[] data = dataPelanggan.get(rowIndex);
+        String oldSeat = data[0].trim();
+
+        JDialog dialog = new JDialog(this, "Edit Data Penumpang", true);
+        dialog.setLayout(new GridLayout(7, 2, 10, 5));
+        dialog.setSize(350, 350);
+        dialog.setLocationRelativeTo(this);
+
+        JTextField namaField = new JTextField(data[1].trim());
+        JTextField nikField = new JTextField(data[2].trim());
+        JTextField hpField = new JTextField(data[3].trim());
+        JComboBox<String> naikCombo = new JComboBox<>(rute);
+        JComboBox<String> turunCombo = new JComboBox<>(rute);
+        naikCombo.setSelectedItem(data[4].trim());
+        turunCombo.setSelectedItem(data[5].trim());
+
+        // Cari kursi yang belum dipesan (kecuali kursi lama)
+        JComboBox<String> kursiCombo = new JComboBox<>();
+        for (int i = 1; i <= 18; i++) {
+            String id = "A" + i;
+            if (!selectedSeats.contains(id) || id.equals(oldSeat)) {
+                kursiCombo.addItem(id);
+            }
+        }
+        for (int i = 1; i <= 22; i++) {
+            String id = "B" + i;
+            if (!selectedSeats.contains(id) || id.equals(oldSeat)) {
+                kursiCombo.addItem(id);
+            }
+        }
+        kursiCombo.setSelectedItem(oldSeat);
+
+        dialog.add(new JLabel("Nama:"));
+        dialog.add(namaField);
+        dialog.add(new JLabel("NIK:"));
+        dialog.add(nikField);
+        dialog.add(new JLabel("No HP:"));
+        dialog.add(hpField);
+        dialog.add(new JLabel("Naik di:"));
+        dialog.add(naikCombo);
+        dialog.add(new JLabel("Turun di:"));
+        dialog.add(turunCombo);
+        dialog.add(new JLabel("Kursi:"));
+        dialog.add(kursiCombo);
+
+        JButton saveBtn = new JButton("Simpan");
+        dialog.add(new JLabel());
+        dialog.add(saveBtn);
+
+        saveBtn.addActionListener(e -> {
+            String nama = namaField.getText();
+            String nik = nikField.getText();
+            String hp = hpField.getText();
+            String naik = (String) naikCombo.getSelectedItem();
+            String turun = (String) turunCombo.getSelectedItem();
+            String newSeat = (String) kursiCombo.getSelectedItem();
+
+            if (nama.isEmpty() || nik.isEmpty() || hp.isEmpty() || naik.equals(turun)) {
+                JOptionPane.showMessageDialog(dialog, "Data tidak lengkap atau asal & tujuan sama!", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            Trayek trayek = new Trayek(naik, turun);
+            double harga = trayek.hargaTiket();
+
+            // Update data pelanggan
+            String[] updatedData = {newSeat, nama, nik, hp, naik, turun, String.valueOf(harga)};
+            dataPelanggan.set(rowIndex, updatedData);
+
+            // Simpan kembali ke file
+            try (FileWriter writer = new FileWriter("data.txt", false)) {
+                for (String[] row : dataPelanggan) {
+                    writer.write(String.join(", ", row) + "\n");
+                }
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(dialog, "Gagal menyimpan perubahan!", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+
+            refreshTable();
+            updateSeatLayout();
+            dialog.dispose();
+        });
+
+        dialog.setVisible(true);
+    }
+
+
+    private void getDataPelanggan(){
+        File file = new File("data.txt");
+
+        if(file.exists()){
+            dataPelanggan.clear();
+            try (Scanner scanFile = new Scanner(file)) {
+                while (scanFile.hasNextLine()) {
+                    dataPelanggan.add(scanFile.nextLine().split(","));
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        System.out.println("Data Pelanggan Berhasil terambil !");
     }
 
     private void doLogout() {
@@ -187,46 +463,6 @@ public class SeatBookingGUI extends JFrame {
         return panel;
     }
 
-//    private void openConfirmationDialog(){
-//        JDialog confirmationDialog = new JDialog(this, "Confirmation Pop Up", true);
-//        confirmationDialog.setLayout(new GridLayout(2, 2, 5, 5));
-//        confirmationDialog.setSize(300, 50);
-//        confirmationDialog.setLocationRelativeTo(this);
-//
-//        JPanel contentPanel = new JPanel();
-//        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
-//        contentPanel.setBorder(new EmptyBorder(10, 10, 0, 10));
-//
-//        JLabel confirmationLabel = new JLabel("Apakah anda ingin menghapus data tiket ?", SwingConstants.CENTER);
-//
-//        JButton yesBtn = new JButton("Ya, saya yakin");
-//
-//        contentPanel.add(confirmationLabel);
-//        confirmationLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-//        contentPanel.add(Box.createRigidArea(new Dimension(0, 10)));
-//        contentPanel.add(yesBtn);
-//        yesBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
-//
-//        confirmationDialog.getContentPane().add(contentPanel);
-//        confirmationDialog.pack();
-//
-//        yesBtn.setBackground(Color.RED);
-//        yesBtn.setOpaque(true);
-//        yesBtn.setBorderPainted(false);
-//        yesBtn.setContentAreaFilled(true);
-//        yesBtn.setFocusPainted(false);
-//        yesBtn.setForeground(Color.WHITE);
-//
-//
-//        yesBtn.addActionListener(e -> {
-//            hapusData();
-//            turnGreen();
-//            confirmationDialog.dispose();
-//        });
-//
-//        confirmationDialog.setVisible(true);
-//    }
-
     private void openPassengerDialog() {
         JDialog dialog = new JDialog(this, "Data Penumpang", true);
         dialog.setLayout(new GridLayout(7, 2, 10, 5));
@@ -362,7 +598,7 @@ public class SeatBookingGUI extends JFrame {
             naikCombo.setSelectedIndex(0);
             turunCombo.setSelectedIndex(0);
 
-            loadPassengers();
+            updateSeatLayout();
 
             dialog.dispose();
         });
@@ -371,6 +607,7 @@ public class SeatBookingGUI extends JFrame {
     }
 
     private void loadBookedSeats() {
+        selectedSeats.clear();
         File file = new File("data.txt");
         if (!file.exists()) return;
 
@@ -386,41 +623,48 @@ public class SeatBookingGUI extends JFrame {
         }
     }
 
-    private void loadPassengers() {
-        loadBookedSeats();
-        for(String seat : selectedSeats){
-            for(int i = 0; i < seatButtonsA.length; i++){
-                for(int j = 0; j < seatButtonsA[i].length; j++){
-                    if(seatButtonsA[i][j].getText().equals(seat)){
-                        seatButtonsA[i][j].setBackground(Color.RED);
-                        seatButtonsA[i][j].setEnabled(false);
+    private void updateSeatLayout() {
+        // Perbarui daftar kursi yang sudah dipesan
+        selectedSeats.clear(); // Hapus isi sebelumnya
+        File file = new File("data.txt");
+
+        if (file.exists()) {
+            try (Scanner sc = new Scanner(file)) {
+                while (sc.hasNextLine()) {
+                    String[] parts = sc.nextLine().split(",");
+                    if (parts.length > 0) {
+                        selectedSeats.add(parts[0].trim());
                     }
                 }
-            }
-
-            for(int i = 0; i < seatButtonsB.length; i++){
-                for(int j = 0; j < seatButtonsB[i].length; j++){
-                    if(seatButtonsB[i][j].getText().equals(seat)){
-                        seatButtonsB[i][j].setBackground(Color.RED);
-                        seatButtonsB[i][j].setEnabled(false);
-                    }
-                }
-            }
-        }
-    }
-
-    private void turnGreen(){
-        for(int i = 0; i < seatButtonsA.length; i++){
-            for(int j = 0; j < seatButtonsA[i].length; j++){
-                seatButtonsA[i][j].setBackground(Color.GREEN);
-                seatButtonsA[i][j].setEnabled(true);
+            } catch (IOException e) {
+                System.err.println("Gagal membaca file data.txt");
             }
         }
 
-        for(int i = 0; i < seatButtonsB.length; i++){
-            for(int j = 0; j < seatButtonsB[i].length; j++){
-                seatButtonsB[i][j].setBackground(Color.GREEN);
-                seatButtonsB[i][j].setEnabled(true);
+        // Update tampilan kursi berdasarkan selectedSeats
+        for (JButton[] row : seatButtonsA) {
+            for (JButton seatBtn : row) {
+                String seatID = seatBtn.getText();
+                if (selectedSeats.contains(seatID)) {
+                    seatBtn.setBackground(Color.RED);
+                    seatBtn.setEnabled(false);
+                } else {
+                    seatBtn.setBackground(Color.GREEN);
+                    seatBtn.setEnabled(true);
+                }
+            }
+        }
+
+        for (JButton[] row : seatButtonsB) {
+            for (JButton seatBtn : row) {
+                String seatID = seatBtn.getText();
+                if (selectedSeats.contains(seatID)) {
+                    seatBtn.setBackground(Color.RED);
+                    seatBtn.setEnabled(false);
+                } else {
+                    seatBtn.setBackground(Color.GREEN);
+                    seatBtn.setEnabled(true);
+                }
             }
         }
     }
