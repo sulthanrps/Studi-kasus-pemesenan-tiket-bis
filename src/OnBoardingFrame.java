@@ -1,5 +1,3 @@
-
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
@@ -8,7 +6,7 @@ import java.time.LocalTime;
 public class OnBoardingFrame extends JFrame {
 
     public OnBoardingFrame() {
-        setTitle("Hai!!! Selamat Datang di Sistem Pemesanan Bus Eka");
+        setTitle("Selamat Datang di Sistem Pemesanan Bus Eka");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(550, 450);
         setLocationRelativeTo(null);
@@ -17,7 +15,7 @@ public class OnBoardingFrame extends JFrame {
         // Ini untuk ucapan berdasarkan waktu
         String ucapan;
         int hour = LocalTime.now().getHour();
-        if (hour >= 4 && hour < 12)   ucapan = "Selamat Pagi";
+        if (hour >= 4 && hour < 12) ucapan = "Selamat Pagi";
         else if (hour < 15)           ucapan = "Selamat Siang";
         else if (hour < 18)           ucapan = "Selamat Sore";
         else                          ucapan = "Selamat Malam";
@@ -57,9 +55,6 @@ public class OnBoardingFrame extends JFrame {
             new RegisterFrame().setVisible(true);
             dispose();
         });
-        btnDaftar.setOpaque(true);
-        btnDaftar.setBorderPainted(false);
-        btnDaftar.setContentAreaFilled(true);
 
         JButton btnLogin = new JButton("Login");
         btnLogin.setFont(new Font("SansSerif", Font.BOLD, 14));
@@ -71,9 +66,6 @@ public class OnBoardingFrame extends JFrame {
             new LoginFrame().setVisible(true);
             dispose();
         });
-        btnLogin.setOpaque(true);
-        btnLogin.setBorderPainted(false);
-        btnLogin.setContentAreaFilled(true);
 
         JPanel southPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
         southPanel.setBorder(new EmptyBorder(15, 0, 20, 0));

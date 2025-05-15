@@ -2,7 +2,9 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.JTableHeader;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.io.*;
 import java.util.*;
 import java.util.List;
@@ -15,7 +17,7 @@ public class SeatBookingGUI extends JFrame {
 
     private final String[] rute = Trayek.rute;
 
-    private String kasir; // Nama kasir yang login
+    private final String kasir; // Nama kasir yang login
 
     private List<String[]> dataPelanggan = new ArrayList<>();
 
@@ -384,9 +386,9 @@ public class SeatBookingGUI extends JFrame {
 
         // header
         String headerText = String.format(
-                "<html><b>Nama Kasir:</b> %s&nbsp;&nbsp; " +
-                        "<b>Tiket Terjual:</b> %d&nbsp;&nbsp; " +
-                        "<b>Total Penjualan:</b> Rp%.0f</html>",
+                "<html><div style='font-family:Segoe UI; padding:8px; background:#cceeff;'>" +
+                        "<b>Kasir:</b> %s &nbsp; <b>Tiket:</b> %d &nbsp; <b>Total:</b> Rp%,.0f" +
+                        "</div></html>",
                 kasir, count, total
         );
         JLabel lblHeader = new JLabel(headerText);
@@ -395,19 +397,26 @@ public class SeatBookingGUI extends JFrame {
         JTable table = new JTable(data, columnNames);
         table.setAutoCreateRowSorter(true);
         table.setFillsViewportHeight(true);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        table.setRowHeight(24);
+        table.setShowGrid(true);
+        table.setGridColor(Color.GRAY);
+        JTableHeader th = table.getTableHeader();
+        th.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        th.setBackground(new Color(176, 196, 222));
 
         JScrollPane scroll = new JScrollPane(table);
-        scroll.setPreferredSize(new Dimension(550, 250));
+        scroll.setPreferredSize(new Dimension(700, 450));
 
         // Panel untuk header sama tabel
-        JPanel panel = new JPanel(new BorderLayout(5,5));
+        JPanel panel = new JPanel(new BorderLayout(10,10));
         panel.add(lblHeader, BorderLayout.NORTH);
         panel.add(scroll, BorderLayout.CENTER);
 
         JOptionPane.showMessageDialog(
                 this,
                 panel,
-                "Ringkasan Harian",
+                "Ringkasan Penjualan",
                 JOptionPane.INFORMATION_MESSAGE
         );
 
@@ -456,7 +465,7 @@ public class SeatBookingGUI extends JFrame {
 
     private void openPassengerDialog() {
         JDialog dialog = new JDialog(this, "Data Penumpang", true);
-        dialog.setLayout(new GridLayout(6, 2, 10, 5));
+        dialog.setLayout(new GridLayout(7, 2, 10, 5));
         dialog.setSize(350, 300);
         dialog.setLocationRelativeTo(this);
 
@@ -465,6 +474,25 @@ public class SeatBookingGUI extends JFrame {
         JTextField hpField = new JTextField();
         JComboBox<String> naikCombo = new JComboBox<>(rute);
         JComboBox<String> turunCombo = new JComboBox<>(rute);
+        JTextField hargaField = new JTextField();
+        hargaField.setEditable(false); //agar tidak bisa diubah user makanya false
+
+        //auto update harga
+        ActionListener updateHarga = e -> {
+            String asal   = (String) naikCombo.getSelectedItem();
+            String tujuan = (String) turunCombo.getSelectedItem();
+            Trayek trayek = new Trayek(asal, tujuan);
+            double h      = trayek.hargaTiket();
+            String hStr   = String.format(
+                    Locale.forLanguageTag("id"),
+                    "Rp%,.0f",
+                    h
+            );
+            hargaField.setText(hStr);
+        };
+        naikCombo.addActionListener(updateHarga);
+        turunCombo.addActionListener(updateHarga);
+        updateHarga.actionPerformed(null);
 
         dialog.add(new JLabel("Nama:"));
         dialog.add(namaField);
@@ -472,10 +500,12 @@ public class SeatBookingGUI extends JFrame {
         dialog.add(nikField);
         dialog.add(new JLabel("No HP:"));
         dialog.add(hpField);
-        dialog.add(new JLabel("Naik di:"));
+        dialog.add(new JLabel("Keberangkatan:"));
         dialog.add(naikCombo);
-        dialog.add(new JLabel("Turun di:"));
+        dialog.add(new JLabel("Tujuan:"));
         dialog.add(turunCombo);
+        dialog.add(new JLabel("Harga:"));
+        dialog.add(hargaField);
 
         JButton submitBtn = new JButton("Konfirmasi");
         dialog.add(new JLabel()); // spacer
@@ -488,8 +518,33 @@ public class SeatBookingGUI extends JFrame {
             String naik = (String) naikCombo.getSelectedItem();
             String turun = (String) turunCombo.getSelectedItem();
 
-            if (nama.isEmpty() || nik.isEmpty() || hp.isEmpty() || naik.equals(turun)) {
-                JOptionPane.showMessageDialog(dialog, "Data tidak lengkap atau naik & turun sama!", "Error", JOptionPane.ERROR_MESSAGE);
+            // Validasi input kosong
+            if (nama.isEmpty() || nik.isEmpty() || hp.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog, "Data tidak terisi penuh!", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Validasi hanya bisa huruf tanpa angka
+            if (!nama.matches("[A-Za-z\\s]+")) {
+                JOptionPane.showMessageDialog(dialog, "Nama hanya boleh berisi huruf dan spasi!", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Validasi nik 16 digit
+            if (!nik.matches("\\d{16}")) {
+                JOptionPane.showMessageDialog(dialog, "NIK harus terdiri dari 16 digit angka!", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Validasi no hp
+            if (!hp.matches("\\d+")) {
+                JOptionPane.showMessageDialog(dialog, "Nomor HP hanya boleh berisi angka!", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Validasi naik dan turun sama
+            if (naik.equals(turun)) {
+                JOptionPane.showMessageDialog(dialog, "Titik keberangkatan tidak boleh sama dengan tujuan!", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
@@ -501,17 +556,35 @@ public class SeatBookingGUI extends JFrame {
 
             double harga = trayek.hargaTiket();
 
-            String message = "<html><body style='font-family:Segoe UI, sans-serif; padding:10px;'>"
+            // setelah menyimpan data, tampilkan dialog dengan opsi Cetak Tiket & OK
+            String message = "<html><body style='font-family:Segoe UI; padding:10px; background:#fff;'>"
                     + "<div style='text-align:center;'>"
-                    + "<div style='font-size:50px; color:#27ae60;'>✔</div>"
-                    + "<div style='font-size:22px; font-weight:bold; color:#27ae60; margin-top:10px;'>Pemesanan Berhasil!</div>"
-                    + "<div style='font-size:14px; color:#555; margin-top:5px;'>Tiket telah berhasil dipesan.</div>"
-                    + "<hr style='margin:15px 0; border: none; border-top: 1px solid #ddd;'>"
-                    + "<div style='font-size:16px; color:#2c3e50;'>Harga Tiket:</div>"
-                    + "<div style='font-size:24px; font-weight:bold; color:#2980b9;'>Rp" + harga + "</div>"
+                    +   "<div style='font-size:40px; color:#27ae60;'>✔</div>"
+                    +   "<div style='font-size:20px; font-weight:bold; color:#34495e; margin-top:5px;'>Pembayaran Berhasil</div>"
+                    +   "<div style='font-size:14px; color:#7f8c8d; margin:10px 0;'>Terima kasih! Silahkan cetak tiket Anda.</div>"
+                    +   "<div style='font-size:16px; font-weight:bold; color:#2980b9;'>Rp" + harga + "</div>"
                     + "</div></body></html>";
 
-            JOptionPane.showMessageDialog(null, message, "Massage", JOptionPane.PLAIN_MESSAGE);
+            // tombol cetak tiket dan oke
+            Object[] options = {"Cetak Tiket", "Kembali"};
+            int choice = JOptionPane.showOptionDialog(
+                    this,
+                    message,
+                    "Sukses",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.PLAIN_MESSAGE,
+                    null,
+                    options,
+                    options[0]
+            );
+
+            // jika user pilih Cetak Tiket, panggil method cetak
+            if (choice == JOptionPane.YES_OPTION) {
+                System.out.println("YESfdkshkasjhksd");
+              PrintTicketFrame sda =  new PrintTicketFrame(penumpang, trayek, harga);
+              sda.setVisible(true);
+
+            }
 
             try (FileWriter writer = new FileWriter("data.txt", true)) {
                 writer.write(selectedSeat + ", " + nama + ", " + nik + ", " + hp + ", " + naik + ", " + turun + ", " + harga + "\n");

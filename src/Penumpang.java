@@ -1,5 +1,3 @@
-
-
 public class Penumpang {
     private String nama;
     private String nik;
@@ -9,5 +7,17 @@ public class Penumpang {
         this.nama = nama;
         this.nik = nik;
         this.noHp = noHp;
+    }
+
+    public String getNama() {
+        return nama;
+    }
+
+    public String getNik() {
+        return nik;
+    }
+
+    public String getHp() {
+        return noHp;
     }
 }

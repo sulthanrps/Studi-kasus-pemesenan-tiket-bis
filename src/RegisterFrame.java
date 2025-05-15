@@ -1,18 +1,19 @@
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 
+@SuppressWarnings("ResultOfMethodCallIgnored")
 public class RegisterFrame extends JFrame implements ActionListener {
 
-    private JTextField txtUsername;
-    private JPasswordField txtPassword;
-    private JButton btnDaftar;
+    private final JTextField txtUsername;
+    private final JPasswordField txtPassword;
+    private final JButton btnKembali;
+
 
     public RegisterFrame() {
         // Ini buat set window
-        setTitle("🚌 Registrasi Kasir Bus Eka");
+        setTitle("Registrasi Kasir Bus Eka");
         setSize(500, 240);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -33,7 +34,7 @@ public class RegisterFrame extends JFrame implements ActionListener {
         JPanel formPanel = new JPanel(new GridLayout(2, 2, 10, 10));
         formPanel.setBackground(Color.WHITE);
 
-        JLabel lblUser = new JLabel("Username (contoh: eka123):");
+        JLabel lblUser = new JLabel("Username (contoh: dindaaw):");
         lblUser.setFont(new Font("SansSerif", Font.PLAIN, 14));
         formPanel.add(lblUser);
 
@@ -54,20 +55,24 @@ public class RegisterFrame extends JFrame implements ActionListener {
         mainPanel.add(formPanel, BorderLayout.CENTER);
 
         // Tombol Daftar di bawah
-        btnDaftar = new JButton("Daftar");
+        JButton btnDaftar = new JButton("Daftar");
         btnDaftar.setFont(new Font("SansSerif", Font.BOLD, 14));
         btnDaftar.setBackground(new Color(46, 134, 193));
         btnDaftar.setForeground(Color.WHITE);
         btnDaftar.setFocusPainted(false);
         btnDaftar.addActionListener(this);
 
-        btnDaftar.setOpaque(true);
-        btnDaftar.setBorderPainted(false);
-        btnDaftar.setContentAreaFilled(true);
+        btnKembali = new JButton("Kembali");
+        btnKembali.setFont(new Font("SansSerif", Font.BOLD, 14));
+        btnKembali.setBackground(Color.LIGHT_GRAY);
+        btnKembali.setFocusPainted(false);
+        btnKembali.addActionListener(this);
 
         JPanel btnPanel = new JPanel();
         btnPanel.setBackground(Color.WHITE);
+        btnPanel.add(btnKembali);
         btnPanel.add(btnDaftar);
+
         mainPanel.add(btnPanel, BorderLayout.SOUTH);
 
         setVisible(true);
@@ -75,6 +80,13 @@ public class RegisterFrame extends JFrame implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == btnKembali) {
+            // Balik ke halaman onboarding
+            new OnBoardingFrame().setVisible(true);
+            dispose();
+            return;
+        }
+
         String username = txtUsername.getText().trim();
         String password = new String(txtPassword.getPassword()).trim();
 
@@ -89,6 +101,25 @@ public class RegisterFrame extends JFrame implements ActionListener {
             JOptionPane.showMessageDialog(this,
                     "Password minimal 6 karakter.",
                     "Password Terlalu Pendek", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (!username.matches("^[a-zA-Z0-9_]+$")) {
+            JOptionPane.showMessageDialog(this,
+                    "Username hanya boleh huruf, angka, atau underscore (tanpa spasi).",
+                    "Input Salah", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        boolean adaHuruf = false;
+        boolean adaAngka = false;
+        for (int i = 0; i < password.length(); i++) {
+            char ch = password.charAt(i);
+            if (Character.isLetter(ch)) adaHuruf = true;
+            if (Character.isDigit(ch)) adaAngka = true;
+        }
+
+        if (!adaHuruf || !adaAngka) {
+            JOptionPane.showMessageDialog(this, "Password harus mengandung huruf dan angka.");
             return;
         }
 
