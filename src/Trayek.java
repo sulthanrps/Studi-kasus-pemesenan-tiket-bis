@@ -1,8 +1,6 @@
-
-
 public class Trayek {
-    private String naik;
-    private String turun;
+    private final String naik;
+    private final String turun;
 
     static String[] rute = {"Wilangan", "Ngawi", "Gendingan", "Solo", "Kartosuro", "Jogja", "Magelang"};
 
@@ -102,4 +100,11 @@ public class Trayek {
     }
 
 
+    public String getTujuan() {
+        return turun;
+    }
+
+    public String getAsal() {
+        return naik;
+    }
 }

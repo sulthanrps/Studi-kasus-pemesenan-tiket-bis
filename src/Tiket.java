@@ -6,4 +6,6 @@ public class Tiket {
         this.penumpang = penumpang;
         this.trayek = trayek;
     }
+
+
 }
